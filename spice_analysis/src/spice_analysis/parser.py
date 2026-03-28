@@ -159,17 +159,36 @@ def _parse_utf16_binary(
     bin_offset += len(marker)
 
     data_bytes = raw_bytes[bin_offset:]
-    values = np.frombuffer(data_bytes, dtype=np.float64)
     expected = n_vars * n_points
-    if len(values) < expected:
-        # Erster Wert manchmal float32 (time bei .op) — als float64 fallback
-        values = np.frombuffer(data_bytes, dtype=np.float32).astype(np.float64)
 
-    if len(values) >= expected and expected > 0:
-        matrix = values[:expected].reshape(n_points, n_vars)
+    # LTspice .op: Spannungen als float64, Ströme als float32
+    # Erkenne Layout anhand Dateigroesse:
+    # n_vars * 8 bytes -> alles float64
+    # gemischt: Spannungen float64, Ströme float32
+    values_64 = np.frombuffer(data_bytes, dtype=np.float64)
+
+    if len(values_64) >= expected:
+        matrix = values_64[:expected].reshape(n_points, n_vars)
         df = pd.DataFrame(matrix, columns=variable_names)
     else:
-        df = pd.DataFrame(columns=variable_names)
+        # Gemischtes Layout: Spannungen float64, Ströme float32
+        # Typ je Variable aus variable_names ableiten
+        rows = []
+        for _ in range(n_points):
+            row: list[float] = []
+            offset = 0
+            for name in variable_names:
+                is_current = name.startswith("I(")
+                dtype = np.float32 if is_current else np.float64
+                size = 4 if is_current else 8
+                if offset + size <= len(data_bytes):
+                    val = float(np.frombuffer(data_bytes[offset:offset + size], dtype=dtype)[0])
+                    row.append(val)
+                    offset += size
+                else:
+                    row.append(0.0)
+            rows.append(row)
+        df = pd.DataFrame(rows, columns=variable_names) if rows else pd.DataFrame(columns=variable_names)
 
     return SimulationResult(source_file=source, signals=df, metadata=metadata)
 

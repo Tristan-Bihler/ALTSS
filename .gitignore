@@ -17,6 +17,7 @@ venv/
 htmlcov/
 
 # LTspice generierte Dateien (nicht einchecken)
+spice_analysis/data/schematics/*.asc.bak
 spice_analysis/data/schematics/*.raw
 spice_analysis/data/schematics/*.log
 spice_analysis/data/schematics/*.op.raw
