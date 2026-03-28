@@ -12,8 +12,8 @@ class TestSpannungsteiler:
     def test_signale_vorhanden(self, spannungsteiler_raw: SimulationResult):
         """V(in) und V(out) müssen im Ergebnis enthalten sein."""
         namen = spannungsteiler_raw.signal_names()
-        assert "V(in)" in namen, f"V(in) fehlt — vorhandene Signale: {namen}"
-        assert "V(out)" in namen, f"V(out) fehlt — vorhandene Signale: {namen}"
+        assert "V(in)" in namen,  f"V(in) fehlt  — vorhanden: {namen}"
+        assert "V(out)" in namen, f"V(out) fehlt — vorhanden: {namen}"
 
     def test_eingangsspannung(self, spannungsteiler_raw: SimulationResult):
         """Eingangsspannung V(in) muss 5 V betragen."""
@@ -21,7 +21,7 @@ class TestSpannungsteiler:
         assert v_in == pytest.approx(5.0, abs=0.01)
 
     def test_ausgangsspannung(self, spannungsteiler_raw: SimulationResult):
-        """Ausgangsspannung V(out) muss bei R1=R2 genau halb so groß sein: 2.5 V."""
+        """Ausgangsspannung V(out) muss bei R1=R2 genau halb sein: 2.5 V."""
         v_out = float(spannungsteiler_raw.signals["V(out)"].iloc[0])
         assert v_out == pytest.approx(2.5, abs=0.01)
 

@@ -30,7 +30,13 @@ def parse_raw(path: str | Path) -> SimulationResult:
     with path.open("rb") as fh:
         raw_bytes = fh.read()
 
-    # Trenne Header (ASCII) vom Datenteil
+    # UTF-16 LE erkennen (LTspice .op und neuere Versionen)
+    if raw_bytes[:2] in (b"\xff\xfe", b"\xfe\xff") or raw_bytes[1:2] == b"\x00":
+        encoding = "utf-16-le" if raw_bytes[1:2] == b"\x00" else "utf-16"
+        text = raw_bytes.decode(encoding, errors="replace")
+        return _parse_utf16_binary(text, raw_bytes, encoding, str(path))
+
+    # UTF-8 / latin-1 Pfad (ältere .tran Dateien)
     header_end = raw_bytes.find(b"Binary:\n")
     if header_end == -1:
         header_end = raw_bytes.find(b"Values:\n")
@@ -111,3 +117,124 @@ def _parse_ascii(data: bytes, names: list[str]) -> pd.DataFrame:
         df = df.set_index(names[0])
         df.index.name = "time_s"
     return df
+
+
+def _parse_utf16_binary(
+    text: str, raw_bytes: bytes, encoding: str, source: str
+) -> SimulationResult:
+    """Parst UTF-16 .raw-Dateien mit Binärdatenteil (LTspice .op/.tran)."""
+    lines = text.splitlines()
+    metadata: dict = {}
+    variable_names: list[str] = []
+    mode = "header"
+    header_char_len = 0
+
+    for line in lines:
+        line_s = line.strip()
+        if line_s.lower().startswith("variables:"):
+            mode = "variables"
+            header_char_len += len(line) + 1
+            continue
+        if line_s.lower().startswith("binary:"):
+            header_char_len += len(line) + 1
+            break
+        header_char_len += len(line) + 1
+
+        if mode == "header" and ":" in line_s:
+            key, _, value = line_s.partition(":")
+            metadata[key.strip().lower()] = value.strip()
+        elif mode == "variables":
+            parts = line_s.split()
+            if len(parts) >= 2:
+                variable_names.append(parts[1])
+
+    n_vars = len(variable_names)
+    n_points = int(metadata.get("no. points", "1").strip() or "1")
+
+    # Binärteil lokalisieren: Binary:\n in UTF-16
+    marker = "Binary:\n".encode(encoding)
+    bin_offset = raw_bytes.find(marker)
+    if bin_offset == -1:
+        raise ValueError(f"Kein Binary-Block gefunden: {source}")
+    bin_offset += len(marker)
+
+    data_bytes = raw_bytes[bin_offset:]
+    values = np.frombuffer(data_bytes, dtype=np.float64)
+    expected = n_vars * n_points
+    if len(values) < expected:
+        # Erster Wert manchmal float32 (time bei .op) — als float64 fallback
+        values = np.frombuffer(data_bytes, dtype=np.float32).astype(np.float64)
+
+    if len(values) >= expected and expected > 0:
+        matrix = values[:expected].reshape(n_points, n_vars)
+        df = pd.DataFrame(matrix, columns=variable_names)
+    else:
+        df = pd.DataFrame(columns=variable_names)
+
+    return SimulationResult(source_file=source, signals=df, metadata=metadata)
+
+
+def _parse_utf16(text: str, source: str) -> SimulationResult:
+    """Parst UTF-16 kodierte .raw-Dateien (LTspice .op und neuere Versionen).
+
+    Das Format enthält Signalwerte als Schlüssel-Wert-Paare nach 'Values:'.
+    """
+    lines = text.splitlines()
+
+    metadata: dict = {}
+    variable_names: list[str] = []
+    values: dict[str, float] = {}
+
+    mode = "header"
+    for line in lines:
+        line_s = line.strip()
+        if not line_s:
+            continue
+
+        if line_s.lower().startswith("variables:"):
+            mode = "variables"
+            continue
+        if line_s.lower().startswith("values:"):
+            mode = "values"
+            continue
+        if line_s.lower().startswith("binary:"):
+            break
+
+        if mode == "header" and ":" in line_s:
+            key, _, value = line_s.partition(":")
+            metadata[key.strip().lower()] = value.strip()
+
+        elif mode == "variables":
+            parts = line_s.split()
+            if len(parts) >= 2:
+                variable_names.append(parts[1])
+
+        elif mode == "values":
+            # Format: "idx\tV(name)\tWert" oder nur Wert auf eigener Zeile
+            parts = line_s.split()
+            if len(parts) >= 3:
+                # z.B. "0\tV(in)\t5"
+                try:
+                    name = parts[1]
+                    val = float(parts[2])
+                    values[name] = val
+                except (ValueError, IndexError):
+                    pass
+            elif len(parts) == 1:
+                # Nur Zahlenwert — Index aus variable_names ableiten
+                idx = len(values)
+                if idx < len(variable_names):
+                    try:
+                        values[variable_names[idx]] = float(parts[0])
+                    except ValueError:
+                        pass
+
+    if not values and variable_names:
+        raise ValueError(f"Unbekanntes .raw-Format: {source}")
+
+    df = pd.DataFrame([values])
+    return SimulationResult(
+        source_file=source,
+        signals=df,
+        metadata=metadata,
+    )
