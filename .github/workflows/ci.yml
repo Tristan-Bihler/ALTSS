@@ -11,7 +11,6 @@ jobs:
       - name: LTspice finden und Schaltungen simulieren
         shell: powershell
         run: |
-          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
           $pfade = @(
             "$env:LOCALAPPDATA\Programs\ADI\LTspice\LTspice.exe",
             "C:\Program Files\LTC\LTspiceXVII\XVice.exe",
@@ -36,7 +35,6 @@ jobs:
       - name: .raw nach fixtures kopieren
         shell: powershell
         run: |
-          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
           $raws = Get-ChildItem spice_analysis\data\schematics\*.raw -ErrorAction SilentlyContinue
           if ($raws) {
             Copy-Item $raws spice_analysis\data\fixtures\

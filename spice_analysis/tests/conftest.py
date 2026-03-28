@@ -59,3 +59,12 @@ def lc_resonanz_raw() -> SimulationResult:
     if not path.exists():
         pytest.skip(f"Fixture nicht vorhanden: {path} — erst LTspice-Simulation ausführen.")
     return parse_raw(path)
+
+
+@pytest.fixture(scope="session")
+def spannungsteiler_raw() -> SimulationResult:
+    """Echte LTspice .raw-Datei: Spannungsteiler R1=R2=10k, V1=5V DC."""
+    path = FIXTURE_DIR / "spannungsteiler.raw"
+    if not path.exists():
+        pytest.skip(f"Fixture nicht vorhanden: {path} — erst LTspice-Simulation ausführen.")
+    return parse_raw(path)
