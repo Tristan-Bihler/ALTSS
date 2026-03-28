@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: LTspice finden und Schaltungen simulieren
-        shell: pwsh
+        shell: powershell
         run: |
           $pfade = @(
             "$env:LOCALAPPDATA\Programs\ADI\LTspice\LTspice.exe",
@@ -33,7 +33,7 @@ jobs:
           }
 
       - name: .raw nach fixtures kopieren
-        shell: pwsh
+        shell: powershell
         run: |
           $raws = Get-ChildItem spice_analysis\data\schematics\*.raw -ErrorAction SilentlyContinue
           if ($raws) {
