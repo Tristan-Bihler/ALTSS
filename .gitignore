@@ -1,0 +1,27 @@
+# Autopush-Skript
+autopush.ps1
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+
+# pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# LTspice generierte Dateien (nicht einchecken)
+spice_analysis/data/schematics/*.raw
+spice_analysis/data/schematics/*.log
+spice_analysis/data/schematics/*.op.raw
+spice_analysis/data/fixtures/*.raw
+
+# OS
+.DS_Store
+Thumbs.db

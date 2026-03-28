@@ -3,6 +3,7 @@ Regressionstests für Analysefunktionen.
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from spice_analysis.analysis import berechne_rms, berechne_thd, fft_spektrum
@@ -16,7 +17,6 @@ class TestRMS:
         assert rms == pytest.approx(1 / np.sqrt(2), rel=1e-2)
 
     def test_leeres_signal_wirft_fehler(self, sinus_result: SimulationResult):
-        import pandas as pd
         with pytest.raises(ValueError):
             berechne_rms(pd.Series([], dtype=float))
 
@@ -31,15 +31,12 @@ class TestTHD:
         with pytest.raises(KeyError):
             berechne_thd(sinus_result, "V(nichtvorhanden)", grundfrequenz_hz=1_000.0)
 
-        def test_nullsignal_thd_ist_null(self, sinus_result: SimulationResult):
-            """Wenn Grundwelle = 0, soll THD 0.0 zurückgeben (kein ZeroDivision)."""
-            import pandas as pd
-            import numpy as np
-
-            t = np.linspace(0, 1e-3, 500)
-            df = pd.DataFrame({"V(dc)": np.zeros(500)}, index=pd.Index(t, name="time_s"))
-            result = SimulationResult(source_file="dc", signals=df)
-            assert berechne_thd(result, "V(dc)", grundfrequenz_hz=1_000.0) == 0.0
+    def test_nullsignal_thd_ist_null(self, sinus_result: SimulationResult):
+        """Wenn Grundwelle = 0, soll THD 0.0 zurückgeben (kein ZeroDivision)."""
+        t = np.linspace(0, 1e-3, 500)
+        df = pd.DataFrame({"V(dc)": np.zeros(500)}, index=pd.Index(t, name="time_s"))
+        result = SimulationResult(source_file="dc", signals=df)
+        assert berechne_thd(result, "V(dc)", grundfrequenz_hz=1_000.0) == 0.0
 
     def test_negative_frequenz_wirft_fehler(self, sinus_result: SimulationResult):
         with pytest.raises(ValueError):
@@ -57,8 +54,6 @@ class TestFFT:
         df = fft_spektrum(sinus_result, "V(out)")
         assert set(df.columns) == {"frequenz_hz", "amplitude"}
 
-# tests/test_analysis.py  ── neue Testfälle
     def test_unbekanntes_signal_wirft_fehler(self, sinus_result: SimulationResult):
-        """Zeile 70: KeyError bei unbekanntem Signalnamen."""
         with pytest.raises(KeyError):
             fft_spektrum(sinus_result, "V(nichtvorhanden)")

@@ -2,11 +2,16 @@
 Gemeinsame pytest Fixtures.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from spice_analysis.models import SimulationResult
+from spice_analysis.parser import parse_raw
+
+FIXTURE_DIR = Path(__file__).parent.parent / "data" / "fixtures"
 
 
 @pytest.fixture
@@ -27,3 +32,30 @@ def rc_result() -> SimulationResult:
     v = np.exp(-t / tau)
     df = pd.DataFrame({"V(out)": v}, index=pd.Index(t, name="time_s"))
     return SimulationResult(source_file="rc_fixture", signals=df)
+
+
+@pytest.fixture(scope="session")
+def rc_tiefpass_raw() -> SimulationResult:
+    """Echte LTspice .raw-Datei: RC-Tiefpass 1. Ordnung (1 kHz, 1 Vpeak)."""
+    path = FIXTURE_DIR / "rc_tiefpass.raw"
+    if not path.exists():
+        pytest.skip(f"Fixture nicht vorhanden: {path} — erst LTspice-Simulation ausführen.")
+    return parse_raw(path)
+
+
+@pytest.fixture(scope="session")
+def rc_tiefpass_2ord_raw() -> SimulationResult:
+    """Echte LTspice .raw-Datei: RC-Tiefpass 2. Ordnung."""
+    path = FIXTURE_DIR / "rc_tiefpass_2ord.raw"
+    if not path.exists():
+        pytest.skip(f"Fixture nicht vorhanden: {path} — erst LTspice-Simulation ausführen.")
+    return parse_raw(path)
+
+
+@pytest.fixture(scope="session")
+def lc_resonanz_raw() -> SimulationResult:
+    """Echte LTspice .raw-Datei: LC-Parallelschwingkreis."""
+    path = FIXTURE_DIR / "lc_resonanz.raw"
+    if not path.exists():
+        pytest.skip(f"Fixture nicht vorhanden: {path} — erst LTspice-Simulation ausführen.")
+    return parse_raw(path)
