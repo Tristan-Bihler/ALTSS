@@ -1,0 +1,56 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LTspice finden und Schaltungen simulieren
+        shell: pwsh
+        run: |
+          $pfade = @(
+            "$env:LOCALAPPDATA\Programs\ADI\LTspice\LTspice.exe",
+            "C:\Program Files\LTC\LTspiceXVII\XVice.exe",
+            "C:\Program Files (x86)\LTC\LTspiceXVII\XVice.exe"
+          )
+          $ltspice = $pfade | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $ltspice) {
+            Write-Error "LTspice nicht gefunden. Geprueft: $($pfade -join ', ')"
+            exit 1
+          }
+          Write-Host "LTspice gefunden: $ltspice"
+          $ascs = Get-ChildItem spice_analysis\data\schematics\*.asc -ErrorAction SilentlyContinue
+          if (-not $ascs) {
+            Write-Host "Keine .asc Dateien gefunden, Schritt wird uebersprungen."
+            exit 0
+          }
+          foreach ($asc in $ascs) {
+            Write-Host "Simuliere: $($asc.Name)"
+            & $ltspice -Run -b $asc.FullName
+          }
+
+      - name: .raw nach fixtures kopieren
+        shell: pwsh
+        run: |
+          $raws = Get-ChildItem spice_analysis\data\schematics\*.raw -ErrorAction SilentlyContinue
+          if ($raws) {
+            Copy-Item $raws spice_analysis\data\fixtures\
+            Write-Host "$($raws.Count) .raw Datei(en) nach data\fixtures\ kopiert."
+          } else {
+            Write-Host "Keine .raw Dateien vorhanden, Schritt wird uebersprungen."
+          }
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Abhängigkeiten installieren
+        run: pip install -e ".[dev]"
+        working-directory: spice_analysis
+
+      - name: Tests ausführen
+        run: pytest
+        working-directory: spice_analysis
