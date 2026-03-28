@@ -161,26 +161,24 @@ def _parse_utf16_binary(
     data_bytes = raw_bytes[bin_offset:]
     expected = n_vars * n_points
 
-    # LTspice .op: Spannungen als float64, Ströme als float32
-    # Erkenne Layout anhand Dateigroesse:
-    # n_vars * 8 bytes -> alles float64
-    # gemischt: Spannungen float64, Ströme float32
+    # LTspice .op Layout: erster Wert float64, alle weiteren float32
+    # Beispiel: V(in)=float64(8b), V(out)=float32(4b), I(x)=float32(4b)
     values_64 = np.frombuffer(data_bytes, dtype=np.float64)
-
     if len(values_64) >= expected:
+        # Alles float64 (älteres Format)
         matrix = values_64[:expected].reshape(n_points, n_vars)
         df = pd.DataFrame(matrix, columns=variable_names)
     else:
-        # Gemischtes Layout: Spannungen float64, Ströme float32
-        # Typ je Variable aus variable_names ableiten
+        # Gemischtes Layout: erster Wert float64, Rest float32
         rows = []
         for _ in range(n_points):
             row: list[float] = []
             offset = 0
-            for name in variable_names:
-                is_current = name.startswith("I(")
-                dtype = np.float32 if is_current else np.float64
-                size = 4 if is_current else 8
+            for i, _name in enumerate(variable_names):
+                if i == 0:
+                    size, dtype = 8, np.float64
+                else:
+                    size, dtype = 4, np.float32
                 if offset + size <= len(data_bytes):
                     val = float(np.frombuffer(data_bytes[offset:offset + size], dtype=dtype)[0])
                     row.append(val)
