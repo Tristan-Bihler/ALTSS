@@ -22,20 +22,23 @@ jobs:
             exit 1
           }
           Write-Host "LTspice gefunden: $ltspice"
-          $ascs = Get-ChildItem spice_analysis\data\schematics\*.asc -ErrorAction SilentlyContinue
-          if (-not $ascs) {
-            Write-Host "Keine .asc Dateien gefunden, Schritt wird uebersprungen."
+          $dateien = @(
+            Get-ChildItem spice_analysis\data\schematics\*.asc -ErrorAction SilentlyContinue
+            Get-ChildItem spice_analysis\data\schematics\*.cir -ErrorAction SilentlyContinue
+          )
+          if (-not $dateien) {
+            Write-Host "Keine .asc/.cir Dateien gefunden, Schritt wird uebersprungen."
             exit 0
           }
-          foreach ($asc in $ascs) {
-            Write-Host "Simuliere: $($asc.Name)"
-            & $ltspice -Run -b $asc.FullName
+          foreach ($f in $dateien) {
+            Write-Host "Simuliere: $($f.Name)"
+            & $ltspice -Run -b $f.FullName
           }
 
       - name: .raw nach fixtures kopieren
         shell: powershell
         run: |
-          $raws = Get-ChildItem spice_analysis\data\schematics\*.raw -ErrorAction SilentlyContinue
+          $raws = Get-ChildItem spice_analysis\data\schematics\*.raw,spice_analysis\data\schematics\*.op.raw -ErrorAction SilentlyContinue
           if ($raws) {
             Copy-Item $raws spice_analysis\data\fixtures\
             Write-Host "$($raws.Count) .raw Datei(en) nach data\fixtures\ kopiert."
