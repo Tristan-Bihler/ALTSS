@@ -1,0 +1,28 @@
+# .github/workflows/ci.yml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: self-hosted        # statt ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Schaltungen simulieren
+        run: |
+          $ltspice = "C:\Program Files\LTC\LTspiceXVII\XVice.exe"
+          Get-ChildItem data\schematics\*.asc | ForEach-Object {
+            & $ltspice -Run -b $_.FullName
+          }
+
+      - name: .raw nach fixtures kopieren
+        run: |
+          Copy-Item data\schematics\*.raw data\fixtures\
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e ".[dev]"
+      - run: pytest
