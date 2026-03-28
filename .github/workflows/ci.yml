@@ -57,3 +57,19 @@ jobs:
       - name: Tests ausführen
         run: pytest
         working-directory: spice_analysis
+
+      - name: .raw Dateien in Projektordner zurückkopieren
+        if: always()
+        shell: powershell
+        run: |
+          $ziel = "C:\Users\Trist\OneDrive\Dokumente\Projekte\Programme\ALTSS\spice_analysis\data\fixtures"
+          if (-not (Test-Path $ziel)) {
+            New-Item -ItemType Directory -Path $ziel -Force | Out-Null
+          }
+          $raws = Get-ChildItem spice_analysis\data\fixtures\*.raw -ErrorAction SilentlyContinue
+          if ($raws) {
+            Copy-Item $raws $ziel -Force
+            Write-Host "$($raws.Count) .raw Datei(en) nach $ziel kopiert."
+          } else {
+            Write-Host "Keine .raw Dateien zum Zurueckkopieren gefunden."
+          }
