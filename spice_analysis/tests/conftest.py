@@ -62,6 +62,15 @@ def lc_resonanz_raw() -> SimulationResult:
 
 
 @pytest.fixture(scope="session")
+def ac_daempfer_raw() -> SimulationResult:
+    """Echte LTspice .raw-Datei: AC-Daempfer 10Vp -> ~5Vp bei 1kHz."""
+    path = FIXTURE_DIR / "ac_daempfer.raw"
+    if not path.exists():
+        pytest.skip(f"Fixture nicht vorhanden: {path} — erst LTspice-Simulation ausfuehren.")
+    return parse_raw(path)
+
+
+@pytest.fixture(scope="session")
 def spannungsteiler_raw() -> SimulationResult:
     """Echte LTspice .raw-Datei: Spannungsteiler R1=R2=10k, V1=5V DC."""
     path = FIXTURE_DIR / "spannungsteiler.raw"

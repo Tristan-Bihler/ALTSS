@@ -11,6 +11,9 @@ import pytest
 from spice_analysis.parser import parse_raw
 
 
+pytestmark = pytest.mark.unit
+
+
 def test_parse_fehlende_datei():
     with pytest.raises(FileNotFoundError):
         parse_raw("nicht_vorhanden.raw")

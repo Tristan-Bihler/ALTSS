@@ -10,6 +10,7 @@ from spice_analysis.analysis import berechne_rms, berechne_thd, fft_spektrum
 from spice_analysis.models import SimulationResult
 
 
+@pytest.mark.unit
 class TestRMS:
     def test_sinus_rms(self, sinus_result: SimulationResult):
         """RMS eines 1V-Sinus ≈ 1/√2."""
@@ -21,6 +22,7 @@ class TestRMS:
             berechne_rms(pd.Series([], dtype=float))
 
 
+@pytest.mark.unit
 class TestTHD:
     def test_reiner_sinus_thd_niedrig(self, sinus_result: SimulationResult):
         """Reiner Sinus hat THD < 1 %."""
@@ -43,6 +45,7 @@ class TestTHD:
             berechne_thd(sinus_result, "V(out)", grundfrequenz_hz=-1.0)
 
 
+@pytest.mark.unit
 class TestFFT:
     def test_grundfrequenz_dominant(self, sinus_result: SimulationResult):
         """Bei 1 kHz Sinus muss 1 kHz die stärkste Komponente sein."""

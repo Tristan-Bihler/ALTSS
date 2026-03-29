@@ -10,6 +10,7 @@ from spice_analysis.analysis import berechne_rms, berechne_thd, fft_spektrum
 from spice_analysis.models import SimulationResult
 
 
+@pytest.mark.regression
 class TestRCTiefpass1Ord:
     def test_signale_vorhanden(self, rc_tiefpass_raw: SimulationResult):
         assert "V(out)" in rc_tiefpass_raw.signal_names()
@@ -32,6 +33,7 @@ class TestRCTiefpass1Ord:
         assert thd < 1.0
 
 
+@pytest.mark.regression
 class TestRCTiefpass2Ord:
     def test_signale_vorhanden(self, rc_tiefpass_2ord_raw: SimulationResult):
         assert "V(out)" in rc_tiefpass_2ord_raw.signal_names()
@@ -47,6 +49,7 @@ class TestRCTiefpass2Ord:
         assert rms_2ord < rms_1ord
 
 
+@pytest.mark.regression
 class TestLCResonanz:
     def test_signale_vorhanden(self, lc_resonanz_raw: SimulationResult):
         assert "V(out)" in lc_resonanz_raw.signal_names()

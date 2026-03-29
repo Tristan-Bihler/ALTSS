@@ -8,6 +8,8 @@ import pytest
 from spice_analysis.models import SimulationResult
 
 
+@pytest.mark.regression
+@pytest.mark.spannungsteiler
 class TestSpannungsteiler:
     def test_signale_vorhanden(self, spannungsteiler_raw: SimulationResult):
         """V(in) und V(out) müssen im Ergebnis enthalten sein."""

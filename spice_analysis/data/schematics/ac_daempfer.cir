@@ -1,0 +1,46 @@
+* Wechselspannungsdaempfer: 10Vp Sinus -> ~5Vp Sinus bei 1kHz
+* Topologie: AC-Kopplung + resistiver Spannungsteiler + NPN-Emitterfolger
+*
+* Signalweg:
+*   V1 (10Vp) -> C1 (AC-Kopplung) -> Basisteiler R1/R2 -> Q1 Basis
+*   Q1 Emitter -> C2 (AC-Auskopplung) -> RL -> V(out)
+*
+* Daempfungsprinzip:
+*   - R1/R2 teilen die AC-Spannung 1:1 -> Vbasis_ac = 5Vp
+*   - Q1 Emitterfolger: Vemitter = Vbasis - 0.7V (DC-versetzt)
+*   - C2 entfernt den DC-Anteil -> V(out) = ~5Vp AC
+
+* Versorgung 12V
+VCC vcc 0 DC 12
+
+* Eingangssignal
+V1 vin 0 SINE(0 10 1k)
+
+* AC-Koppelkondensator (Eingang)
+C1 vin ac_in 100u IC=0
+
+* Basisspannungsteiler fuer DC-Arbeitspunkt (~6V) und AC-Daempfung (0.5x)
+* R1 und R2 je 100k -> parallel = 50k Quellwiderstand fuer Basis
+R1 vcc ac_in 100k
+R2 ac_in 0 100k
+
+* NPN Emitterfolger
+* .model direkt eingebettet (generisches NPN, kein externer .lib noetig)
+Q1 vcc ac_in emitter_node QNPN
+
+* Emitterwiderstand: legt Strom und Arbeitspunkt fest
+RE emitter_node 0 1k
+
+* AC-Auskopplung zum Ausgang
+C2 emitter_node out 100u IC=0
+
+* Lastwiederstand
+RL out 0 10k
+
+* Generisches NPN-Modell (BC547-aehnlich)
+.model QNPN NPN(BF=200 VAF=100 IS=1e-14 RB=100 RC=1 RE=0.1
++ CJE=10p CJC=5p TF=0.5n TR=50n)
+
+.tran 0 5m 0 1u
+.backanno
+.end

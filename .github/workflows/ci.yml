@@ -54,8 +54,12 @@ jobs:
         run: pip install -e ".[dev]"
         working-directory: spice_analysis
 
-      - name: Tests ausführen
-        run: pytest
+      - name: Unit-Tests ausführen
+        run: pytest -m unit -v
+        working-directory: spice_analysis
+
+      - name: Regressionstests ausführen
+        run: pytest -m regression -v
         working-directory: spice_analysis
 
       - name: .raw Dateien in Projektordner zurückkopieren
