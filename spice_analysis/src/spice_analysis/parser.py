@@ -170,10 +170,11 @@ def _parse_utf16_binary(
         df = pd.DataFrame(matrix, columns=variable_names)
     else:
         # Gemischtes Layout: erster Wert float64, Rest float32
+        # offset muss ueber alle Punkte akkumulieren (nicht per Punkt resetten)
         rows = []
+        offset = 0
         for _ in range(n_points):
             row: list[float] = []
-            offset = 0
             for i, _name in enumerate(variable_names):
                 if i == 0:
                     size, dtype = 8, np.float64

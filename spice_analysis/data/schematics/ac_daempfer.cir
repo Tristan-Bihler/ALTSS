@@ -41,6 +41,6 @@ RL out 0 10k
 .model QNPN NPN(BF=200 VAF=100 IS=1e-14 RB=100 RC=1 RE=0.1
 + CJE=10p CJC=5p TF=0.5n TR=50n)
 
-.tran 0 5m 0 1u
+.tran 0 20m 0 1u
 .backanno
 .end
